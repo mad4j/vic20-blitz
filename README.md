@@ -1,3 +1,3 @@
 # vic20-blitz
 
-![images/BlitzVic20.jpg](Blitz)
+<img src="images/BlitzVic20.jpg" width="240px" title="Blitz">
