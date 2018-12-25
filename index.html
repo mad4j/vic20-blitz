@@ -1,282 +1,190 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <script language="JavaScript" src="js/common.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/jquery-1.8.1.js" type="text/javascript"></script>
-    <!--
-    <script language="JavaScript" src="js/jquery-ui-1.8.23.custom.min.js" type="text/javascript"></script>-
-    -->
-</head>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-<body style="padding:0;margin:0" class="">
+    <title>Lode Runner in a Box</title>
 
-    <script language="JavaScript" src="js/event.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/carts.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/basic.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/vic20.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/vic6560.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/via6522.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/keyboard.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/tapedrive.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/cpu6502.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/cpu6502disassemble.js" type="text/javascript"></script>
-    <script language="JavaScript" src="js/cpu6502assemble.js" type="text/javascript"></script>
+    <script type="text/javascript" src="js-dos-api-3.0.js"></script>
+    <script type="text/javascript" src="node_modules/hammerjs/hammer.min.js"></script>
 
-<script>
-    function fullscreen(noWarningForNotSupported) {
-		var isFullScreen = document.mozFullScreen || document.webkitIsFullScreen;
-		if (!isFullScreen) {
-			var elem = document.getElementById("canvasfs");
-			var canvasElem = document.getElementById("canvas");
-			
-			if (!$(elem).is(":visible")) {
-				alert("You cannot go fullscreen in debug mode");
-				return;
-			}
-			if (elem.requestFullScreen) {  
-				elem.requestFullScreen();  
-			} else if (elem.mozRequestFullScreen) {  
-				elem.mozRequestFullScreen();
-				elem.style.height="100%";
-				canvasElem.style.height="100%";
-			} else if (elem.webkitRequestFullScreen) {  
-				elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);  
-				elem.style.height="100%";
-				elem.style.width="100%";
-				canvasElem.style.height="100%";
-			} else {
-				if (!(noWarningForNotSupported==true)) alert("Fullscreen not supported. Try Firefox or Chrome.");
-			}
-		} else {
-			var elem = document.getElementById("canvas");  
-			if (document.cancelFullScreen) {  
-				document.cancelFullScreen();
-			} else if (document.mozCancelFullScreen) {  
-				document.mozCancelFullScreen();
-				elem.style.height="";
-			} else if (document.webkitCancelFullScreen) {  
-				document.webkitCancelFullScreen();  
-				elem.style.height="";
-			}
-		}
-    }
-</script>
+    <style type="text/css">
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000000; 
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+        }
+        .page-container { text-align: center; }
+        .dosbox-container { width: 640px; height: 400px; }
+        .dosbox-container > .dosbox-overlay { background: url(cover.png); }
+    </style>
 
+  </head>
+  <body>
 
-    <div id="canvasfs" style="background-color:#000">
-    <canvas id="canvas" width="1" height="1" style="display:block;margin-left:auto;margin-right:auto" onclick="fullscreen(true)">&#160;</canvas>
+    <div class="page-container">
+      <div id="dosbox"></div>
+      <br/>
+      <button onclick="dosbox.requestFullScreen();">Make fullscreen</button>
     </div>
+    
+    <script type="text/javascript">
 
-<script>
-vic20 = new Vic20();
-var machineType = getURLParameter("machineType");
-if (machineType=="pal") {vic20.isPal=true;kerneldata=kerneldataPal;machineType="pal";}
+      //init DosBox emulator
+      var dosbox = new Dosbox({
+        id: "dosbox",
+        onload: function (dosbox) {
+          dosbox.run("GAME.ZIP", "./XVIC.EXE BLITZ.PRG");
+        },
+        onrun: function (dosbox, app) {
+          console.log("App '" + app + "' is runned");
+        }
+      });
+    
+      //added fake auto-start
+      window.onload = function(e) { 
+        document
+          .querySelector(".dosbox-start")
+          .click();
+      };
 
-/*if (machineType=="ntsc") */ else {vic20.isPal=false;kerneldata=kerneldataNtsc;}
+      const keybEnter = {
+        char : '\n',
+        key : "Enter",
+        code: "Enter",
+        keyCode : 13
+      };
 
+      const keybEsc = {
+        char : '\0',
+        key : "Esc",
+        code: "Esc",
+        keyCode : 27
+      };
 
-vic20.init();
-vic20.execute();
+      const keybNum2 = {
+        char : '2',
+        key : "2",
+        code: "Numpad2",
+        keyCode : 98
+      };
 
-var url = getURLParameter("load");
-var urlmem = getURLParameter("mem");
+      const keybNum4 = {
+        char : '4',
+        key : "4",
+        code: "Numpad4",
+        keyCode : 100
+      };
 
-if (url && url!="" && url!=null && url!="null") {
-	if (url.indexOf(".csm")!=-1 || url.indexOf(".tap")!=-1) {
-		externalLoad("loadTape",url)
-	} else {
-		externalLoad("loadPrg",url);
-	}
-}
+      const keybNum5 = {
+        char : '5',
+        key : "5",
+        code: "Numpad5",
+        keyCode : 101
+      };
 
-function externalLoad(cmd,url,format, subfile) {
-	//$("#selectZipFile").dialog("close");
-	console.debug("externalLoad cmd="+cmd+" url="+url+" format="+format+" subfile="+subfile);
-	fullscreen(true);
-	if (format) {
-		if(format=="pal") {
-			vic20.isPal=true;kerneldata=kerneldataPal;
-		}
-		if(format=="ntsc") {
-			vic20.isPal=false;kerneldata=kerneldataNtsc;
-		}
-	}
-	var head= document.getElementsByTagName('head')[0];
-	var script= document.createElement('script');
-	script.type= 'text/javascript';
-	// TODO encode
-	script.src= 'vic20/prgtojsloader.php?cmd='+cmd+'&prgurl='+url+'&subfile='+subfile;
-	head.appendChild(script);
-}
+      const keybNum6 = {
+        bubbles : true,
+        cancelable : true,
+        char : '6',
+        key : "6",
+        code: "Numpad6",
+        keyCode : 102
+      };
 
-function loadTapeCustom(tapeUrl) {
-	if (!tapeUrl) tapeUrl = window.prompt("Enter the URL to the tape including http://\nSupported formats are csm,tap,csm.gz, and tap.gz");
-	if (tapeUrl) {
-		externalLoad("loadTape",tapeUrl);
-	}
-}
+      const keybNum7 = {
+        char : '7',
+        key : "7",
+        code: "Numpad7",
+        keyCode : 103
+      };
 
-function loadTape(binhex) {
-	EventManager.event(EventTape.createInsertEvent(binToArray(binhex[0])));
-	if (urlmem) {
-		Config.memoryAt0400 = Config.memoryAt2000 = Config.memoryAt4000 = Config.memoryAt6000 = Config.memoryAtA000 = false;
-		if (urlmem=="3k") Config.memoryAt0400 = true;
-		if (urlmem=="24k") Config.memoryAt2000 = Config.memoryAt4000 = Config.memoryAt6000 = true;
-		if (urlmem=="32k") Config.memoryAt2000 = Config.memoryAt4000 = Config.memoryAt6000 = Config.memoryAtA000 = true;
-		urlmem = undefined;
-	}
-	vic20.softreset();
-	loadPrgSrc="tape";
-}
+      const keybNum8 = {
+        char : '8',
+        key : "8",
+        code: "Numpad8",
+        keyCode : 104
+      };
 
-function loadCartCustom() {
-	var cartUrl = window.prompt("Enter the URL to the cart including the http://");
-	if (cartUrl) {
-		externalLoad("loadPrg",cartUrl);
-	}
-}
+      const keybNum9 = {
+        char : '9',
+        key : "9",
+        code: "Numpad9",
+        keyCode : 105
+      };
 
-function loadPrgCustom() {
-	var cartUrl = window.prompt("Enter the URL to the prg including the http://");
-	if (cartUrl) {
-		externalLoad("loadPrg",cartUrl);
-	}
-}
+	    var el = document.querySelector("#dosbox");
+	    var mc = new Hammer.Manager(el);
 
-function chooseZipFile(options) {
-	validOptions = new Array();
-	for(var i=0; i<options.length; i++) {
-		if (options[i].indexOf(".prg")!=-1) {
-			$("#selectZipFiles").append($('<a>'+options[i]+'</a>').attr('href',"javascript:externalLoad(\'loadPrg\',\'"+url+"\',\'"+machineType+"\',\'"+options[i]+"\');")).append("<br/>");
-			validOptions.push(options[i]);
-		}
-	}
-	if (validOptions.length==0) {
-		alert("Sorry, no .prg files found in zip");
-	}
-	else if (validOptions.length==1) {
-		externalLoad('loadPrg',url,machineType,validOptions[0]);
-	}
-	else {
-		$("#selectZipFile").dialog();
-	}
-}
-</script>
-<div id="selectZipFile" style="display:none">
-Select a file from the zip to open:
-<div id="selectZipFiles">
-</div>
-</div>
-<script>
-function updateMenuState() {
-	$("#joykeysopt").prop("checked", Config.joykeys);
-	$("#joykeysopt2").prop("checked", Config.joykeys);
+      mc.add(new Hammer.Tap({ event: "singletap", taps: 1 }));
+      mc.on("singletap", function(e) {
 
-	$("#mem0400opt").prop("checked", Config.memoryAt0400);
-	$("#mem2000opt").prop("checked", Config.memoryAt2000);
-	$("#mem4000opt").prop("checked", Config.memoryAt4000);
-	$("#mem6000opt").prop("checked", Config.memoryAt6000);
-	$("#memA000opt").prop("checked", Config.memoryAtA000);
-	
-	$("#speedopt100").prop("checked", Config.speed==1);
-	$("#speedoptNoLimit").prop("checked", Config.speed!=1);
-	
-	$("#ntscUsaOpt").prop("checked",   kerneldata==kerneldataNtsc && chardata==chardataEnglish);
-	$("#ntscJapanOpt").prop("checked", kerneldata==kerneldataNtsc && chardata==chardataJapan);
-	$("#palWorldOpt").prop("checked",  kerneldata==kerneldataPal && chardata==chardataEnglish);
-	$("#palSweFiOpt").prop("checked",  kerneldata==kerneldataPal && chardata==chardataSwedenFinland);
-}
+        var centerX = el.offsetLeft + el.offsetWidth / 2.0;
+        var centerY = el.offsetTop + el.offsetHeight / 2.0;
 
-updateMenuState();
+        var x = e.center.x - centerX;
+        var y = e.center.y - centerY;
+        var r = Math.min(el.offsetWidth, el.offsetHeight) / 2.0;
+        
+        var k = keybEnter;
 
-function playTape() {
-	Config.tapePlay=true;
-	updateDatasetteView();	
-}
+        if (x*x+y*y < r*r) {
+          k = keybEnter;
+        } else if (x < 0) {
+          k = keybNum7;
+        } else {
+          k = keybNum9;
+        }
 
-function stopTape() {
-	Config.tapePlay=false;
-	updateDatasetteView();	
-}
+        document.dispatchEvent(new KeyboardEvent("keydown", k));
+        document.dispatchEvent(new KeyboardEvent("keyup", k));
+      });
 
-function datasetteMouseClick() {
-	$('#tapeZoom').dialog({width:300,height:440,position:{my:"left",at:"left",of:$("#datasettesmall")}});
-	updateDatasetteView();
-}
+      mc.add(new Hammer.Pan({ event: "pan"}));
+      mc.get("pan").set({ direction: Hammer.DIRECTION_ALL });
 
-function updateDatasetteView(event) {
-	if (event && event.filepath) {
-		datasetteMouseClick();
-	}
-	$("#datasette_empty,#datasette_stopped,#datasette_play").hide();
-	if (Config.tapePlay) {
-		$("#datasette_play").show();
-		$("#datasette_empty,#datasette_stopped").hide();
-	} else if (vic20.tapedrive.isTapeLoaded()) {
-		$("#datasette_stopped").show();
-		$("#datasette_empty,#datasette_play").hide();
-	} else {
-		$("#datasette_empty").show();
-		$("#datasette_stopped,#datasette_play").hide();
-	}
-}
+      var lastPan = "none";
 
-EventManager.listen("EventTape", updateDatasetteView);
+      mc.on("panstart panend pancancel", function(e) {
+        lastPan = "none";
+      });
 
-function pasteBasicProgram() {
-	KeyboardUnhook();
-	$("#basicDialog").dialog({
-			title: 'Basic Listing',
-			width: 700,
-			height: 300,
-			close: function(event, ui) { KeyboardHook(); loadPrgFromBasicString($("#pasteBasic").val()); return true; }
-	});
-	$("#pasteBasic").val(memoryToAsciiBasic(mem));
-}
+      mc.on("panleft panright panup pandown", function(e) {
 
-var assembler = new Cpu6502assembler();
+        if (e.type == lastPan) {
+          return;
+        }
+        
+        lastPan = e.type;
 
-function pasteAssemblerProgram() {
-	KeyboardUnhook();
-	$("#assemblerDialog").dialog({
-			title: 'Assembler Listing',
-			width: 'auto',
-			close: function(event, ui) {
-				KeyboardHook();
-				return true;
-			}
-	});
-}
+        var k = keybNum5;
+        switch(e.type) {
+          case "panleft":
+            k = keybNum4;
+            break;
+          case "panright":
+            k = keybNum6;
+            break;
+          case "panup":
+            k = keybNum8;
+            break;
+          case "pandown":
+            k = keybNum2;
+            break;
+          default:
+            k = keybNum5;
+            break;
+        }
+        
+        document.dispatchEvent(new KeyboardEvent("keydown", k));
+        document.dispatchEvent(new KeyboardEvent("keyup", k));
+      });
 
-function compile() {
-	var result = assembler.compile($("#pasteAssembler").val());
-	var fb = "";
-	for(var i=0; i<result.feedback.length; i++) {
-		fb += result.feedback[i].message + "\n";
-	}
-	$("#assemblerFeedback").val(fb);
-	if (result.success) {
-		for(var i=0; i<65536; i++) {
-			if (result.m[i]!==undefined) {
-				mem[i] = result.m[i];
-				memExec[i] = 2;
-			}
-		}
-	}
-}
-</script>
-<div id="basicDialog" style="display:none">
-<p>Paste/Type your program then close this dialog:</p><p>
-<textarea id="pasteBasic" style="width:100%;height:100%;">&nbsp;</textarea>
-</p></div>
+    </script>
 
-
-
-<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-labelledby="ui-dialog-title-assemblerDialog" style="display: none; z-index: 1002; outline: 0px; position: absolute; height: auto; width: auto; top: 21.5px; left: 354.5px;"><div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span class="ui-dialog-title" id="ui-dialog-title-assemblerDialog">Assembler Listing</span><a href="https://www.mdawson.net/vic20chrome/vic20.php#" class="ui-dialog-titlebar-close ui-corner-all" role="button"><span class="ui-icon ui-icon-closethick">close</span></a></div><div id="assemblerDialog" style="width: auto; min-height: 109.28px; height: auto;" class="ui-dialog-content ui-widget-content" scrolltop="0" scrollleft="0">
-Paste/Type your assembler here:<br>
-<textarea id="pasteAssembler" style="width:600px;height:300px;"></textarea><br>
-<button onclick="compile()">Compile</button>(automatically copies to memory on success)<br>
-Compiler Output:<br>
-<textarea id="assemblerFeedback" style="width:600px;height:100px;"></textarea>
-</div><div class="ui-resizable-handle ui-resizable-n" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-e" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-s" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se ui-icon-grip-diagonal-se" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-sw" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-ne" style="z-index: 1000;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 1000;"></div></div></body></html>
+  </body>
+</html>
