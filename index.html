@@ -3,7 +3,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-    <title>Lode Runner in a Box</title>
+    <title>BLITZ in a Box</title>
 
     <script type="text/javascript" src="js-dos-api-3.0.js"></script>
     <script type="text/javascript" src="node_modules/hammerjs/hammer.min.js"></script>
@@ -38,7 +38,7 @@
       var dosbox = new Dosbox({
         id: "dosbox",
         onload: function (dosbox) {
-          dosbox.run("GAME.zip", "./XVIC.EXE BLITZ.PRG");
+          dosbox.run("GAME.ZIP", "./XVIC.EXE BLITZ.PRG");
         },
         onrun: function (dosbox, app) {
           console.log("App '" + app + "' is runned");
