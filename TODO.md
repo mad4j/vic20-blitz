@@ -1,5 +1,5 @@
 
-# Browser Exection Environment
+# Browser Execution Environment
  - [x] Download VICE source code
  
    Added VICE3.3 source tarball in ***resources/*** folder
