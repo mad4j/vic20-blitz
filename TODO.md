@@ -7,6 +7,9 @@
   - [x] Setup EMSCRIPTEN toolchain
     - [x] Install Windows Linux Subsystem
     - [x] Install needed packages
+    
+      needed the installation of phython package before python2.7
+      
     - [x] Install toolchain
     
     
